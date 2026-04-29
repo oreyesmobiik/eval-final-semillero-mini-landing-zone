@@ -6,19 +6,39 @@ variable "location" {
   type = string
 }
 
-variable "vnet_name" {
+variable "hub_vnet_name" {
   type = string
 }
 
-variable "vnet_cidr" {
+variable "hub_vnet_cidr" {
   type = string
 }
 
-variable "aks_subnet_cidr" {
+variable "hub_gateway_subnet_cidr" {
   type = string
 }
 
-variable "private_endpoint_subnet_cidr" {
+variable "enable_bastion_subnet" {
+  type = bool
+}
+
+variable "hub_bastion_subnet_cidr" {
+  type = string
+}
+
+variable "spoke_vnet_name" {
+  type = string
+}
+
+variable "spoke_vnet_cidr" {
+  type = string
+}
+
+variable "spoke_aks_subnet_cidr" {
+  type = string
+}
+
+variable "spoke_private_endpoint_subnet_cidr" {
   type = string
 }
 

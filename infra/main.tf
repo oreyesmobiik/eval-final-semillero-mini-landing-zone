@@ -71,15 +71,20 @@ resource "azurerm_federated_identity_credential" "app_main" {
 module "network" {
   source = "./modules/network"
 
-  resource_group_name            = azurerm_resource_group.platform.name
-  location                       = var.location
-  vnet_name                      = "vnet-${local.base_name}"
-  vnet_cidr                      = var.vnet_cidr
-  aks_subnet_cidr                = var.aks_subnet_cidr
-  private_endpoint_subnet_cidr   = var.private_endpoint_subnet_cidr
-  private_dns_zone_acr_name      = "privatelink.azurecr.io"
-  private_dns_zone_keyvault_name = "privatelink.vaultcore.azure.net"
-  tags                           = local.tags
+  resource_group_name                = azurerm_resource_group.platform.name
+  location                           = var.location
+  hub_vnet_name                      = "vnet-hub-${local.base_name}"
+  hub_vnet_cidr                      = var.hub_vnet_cidr
+  hub_gateway_subnet_cidr            = var.hub_gateway_subnet_cidr
+  enable_bastion_subnet              = var.enable_bastion_subnet
+  hub_bastion_subnet_cidr            = var.hub_bastion_subnet_cidr
+  spoke_vnet_name                    = "vnet-spoke-${local.base_name}"
+  spoke_vnet_cidr                    = var.spoke_vnet_cidr
+  spoke_aks_subnet_cidr              = var.spoke_aks_subnet_cidr
+  spoke_private_endpoint_subnet_cidr = var.spoke_private_endpoint_subnet_cidr
+  private_dns_zone_acr_name          = "privatelink.azurecr.io"
+  private_dns_zone_keyvault_name     = "privatelink.vaultcore.azure.net"
+  tags                               = local.tags
 }
 
 module "acr" {
@@ -124,6 +129,19 @@ module "policy" {
   scope_resource_group_id = azurerm_resource_group.platform.id
   location                = var.location
   tags                    = local.tags
+}
+
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  resource_group_name   = azurerm_resource_group.platform.name
+  location              = var.location
+  aks_id                = module.aks.id
+  aks_name              = module.aks.name
+  app_namespace         = var.app_namespace
+  cpu_threshold_percent = var.aks_node_cpu_alert_threshold
+  alert_email_receiver  = var.monitor_alert_email_receiver
+  tags                  = local.tags
 }
 
 resource "azurerm_role_assignment" "infra_contributor_rg" {

@@ -1,0 +1,33 @@
+variable "resource_group_name" {
+  type = string
+}
+
+variable "location" {
+  type = string
+}
+
+variable "aks_id" {
+  type = string
+}
+
+variable "aks_name" {
+  type = string
+}
+
+variable "cpu_threshold_percent" {
+  type = number
+}
+
+variable "app_namespace" {
+  type = string
+}
+
+variable "alert_email_receiver" {
+  type     = string
+  default  = null
+  nullable = true
+}
+
+variable "tags" {
+  type = map(string)
+}

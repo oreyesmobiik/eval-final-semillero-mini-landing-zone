@@ -37,3 +37,18 @@ output "tenant_id" {
   value       = data.azurerm_client_config.current.tenant_id
   description = "Tenant ID"
 }
+
+output "log_analytics_workspace_name" {
+  value       = module.monitoring.log_analytics_workspace_name
+  description = "Log Analytics workspace name"
+}
+
+output "aks_cpu_alert_id" {
+  value       = module.monitoring.aks_cpu_alert_id
+  description = "Metric alert resource ID for AKS node CPU"
+}
+
+output "app_http_error_kql" {
+  value       = module.monitoring.app_http_error_kql
+  description = "KQL query for 404/500 app container logs"
+}

@@ -38,20 +38,63 @@ variable "github_default_branch" {
   default     = "main"
 }
 
-variable "vnet_cidr" {
-  description = "Address space for virtual network"
+variable "hub_vnet_cidr" {
+  description = "Address space for hub virtual network"
   type        = string
   default     = "10.50.0.0/16"
 }
 
-variable "aks_subnet_cidr" {
-  description = "Subnet CIDR for AKS nodes"
+variable "spoke_vnet_cidr" {
+  description = "Address space for spoke virtual network"
   type        = string
-  default     = "10.50.1.0/24"
+  default     = "10.51.0.0/16"
 }
 
-variable "private_endpoint_subnet_cidr" {
-  description = "Subnet CIDR for private endpoints"
+variable "hub_gateway_subnet_cidr" {
+  description = "Subnet CIDR for GatewaySubnet in hub"
   type        = string
-  default     = "10.50.2.0/24"
+  default     = "10.50.0.0/27"
+}
+
+variable "enable_bastion_subnet" {
+  description = "Whether to create AzureBastionSubnet in hub"
+  type        = bool
+  default     = false
+}
+
+variable "hub_bastion_subnet_cidr" {
+  description = "Subnet CIDR for AzureBastionSubnet in hub"
+  type        = string
+  default     = "10.50.0.32/27"
+}
+
+variable "spoke_aks_subnet_cidr" {
+  description = "Subnet CIDR for AKS nodes in spoke"
+  type        = string
+  default     = "10.51.1.0/24"
+}
+
+variable "spoke_private_endpoint_subnet_cidr" {
+  description = "Subnet CIDR for private endpoints in spoke"
+  type        = string
+  default     = "10.51.2.0/24"
+}
+
+variable "aks_node_cpu_alert_threshold" {
+  description = "Alert threshold for AKS node CPU percentage"
+  type        = number
+  default     = 80
+}
+
+variable "app_namespace" {
+  description = "Kubernetes namespace for application logs"
+  type        = string
+  default     = "miniapp"
+}
+
+variable "monitor_alert_email_receiver" {
+  description = "Optional email receiver for monitor action group alerts"
+  type        = string
+  default     = null
+  nullable    = true
 }
