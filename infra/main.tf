@@ -1,0 +1,151 @@
+data "azurerm_client_config" "current" {}
+
+resource "random_string" "suffix" {
+  length  = 5
+  upper   = false
+  lower   = true
+  numeric = true
+  special = false
+}
+
+locals {
+  suffix = random_string.suffix.result
+
+  base_name = lower("${var.prefix}-${var.environment}-${local.suffix}")
+
+  tags = {
+    environment = var.environment
+    owner       = var.owner
+    managedBy   = "terraform"
+    platform    = "landing-zone-mini"
+  }
+}
+
+resource "azurerm_resource_group" "platform" {
+  name     = "rg-${local.base_name}"
+  location = var.location
+  tags     = local.tags
+}
+
+resource "azurerm_user_assigned_identity" "gha_infra" {
+  name                = "uami-${local.base_name}-infra"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.platform.name
+  tags                = local.tags
+}
+
+resource "azurerm_user_assigned_identity" "gha_app" {
+  name                = "uami-${local.base_name}-app"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.platform.name
+  tags                = local.tags
+}
+
+resource "azurerm_federated_identity_credential" "infra_pr" {
+  name                = "fic-${local.base_name}-infra-pr"
+  resource_group_name = azurerm_resource_group.platform.name
+  parent_id           = azurerm_user_assigned_identity.gha_infra.id
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = "https://token.actions.githubusercontent.com"
+  subject             = "repo:${var.github_org}/${var.github_repo}:pull_request"
+}
+
+resource "azurerm_federated_identity_credential" "infra_main" {
+  name                = "fic-${local.base_name}-infra-main"
+  resource_group_name = azurerm_resource_group.platform.name
+  parent_id           = azurerm_user_assigned_identity.gha_infra.id
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = "https://token.actions.githubusercontent.com"
+  subject             = "repo:${var.github_org}/${var.github_repo}:ref:refs/heads/${var.github_default_branch}"
+}
+
+resource "azurerm_federated_identity_credential" "app_main" {
+  name                = "fic-${local.base_name}-app-main"
+  resource_group_name = azurerm_resource_group.platform.name
+  parent_id           = azurerm_user_assigned_identity.gha_app.id
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = "https://token.actions.githubusercontent.com"
+  subject             = "repo:${var.github_org}/${var.github_repo}:ref:refs/heads/${var.github_default_branch}"
+}
+
+module "network" {
+  source = "./modules/network"
+
+  resource_group_name            = azurerm_resource_group.platform.name
+  location                       = var.location
+  vnet_name                      = "vnet-${local.base_name}"
+  vnet_cidr                      = var.vnet_cidr
+  aks_subnet_cidr                = var.aks_subnet_cidr
+  private_endpoint_subnet_cidr   = var.private_endpoint_subnet_cidr
+  private_dns_zone_acr_name      = "privatelink.azurecr.io"
+  private_dns_zone_keyvault_name = "privatelink.vaultcore.azure.net"
+  tags                           = local.tags
+}
+
+module "acr" {
+  source = "./modules/acr"
+
+  resource_group_name     = azurerm_resource_group.platform.name
+  location                = var.location
+  name                    = substr(replace("acr${local.base_name}", "-", ""), 0, 50)
+  private_endpoint_subnet = module.network.private_endpoint_subnet_id
+  private_dns_zone_id     = module.network.private_dns_zone_acr_id
+  tags                    = local.tags
+}
+
+module "keyvault" {
+  source = "./modules/keyvault"
+
+  resource_group_name     = azurerm_resource_group.platform.name
+  location                = var.location
+  name                    = substr(replace("kv-${local.base_name}", "_", "-"), 0, 24)
+  tenant_id               = data.azurerm_client_config.current.tenant_id
+  private_endpoint_subnet = module.network.private_endpoint_subnet_id
+  private_dns_zone_id     = module.network.private_dns_zone_keyvault_id
+  tags                    = local.tags
+}
+
+module "aks" {
+  source = "./modules/aks"
+
+  resource_group_name = azurerm_resource_group.platform.name
+  location            = var.location
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+  name                = "aks-${local.base_name}"
+  dns_prefix          = "aks-${local.suffix}"
+  subnet_id           = module.network.aks_subnet_id
+  acr_id              = module.acr.id
+  tags                = local.tags
+}
+
+module "policy" {
+  source = "./modules/policy"
+
+  scope_resource_group_id = azurerm_resource_group.platform.id
+  location                = var.location
+  tags                    = local.tags
+}
+
+resource "azurerm_role_assignment" "infra_contributor_rg" {
+  scope                = azurerm_resource_group.platform.id
+  role_definition_name = "Contributor"
+  principal_id         = azurerm_user_assigned_identity.gha_infra.principal_id
+}
+
+resource "azurerm_role_assignment" "app_acr_push" {
+  scope                = module.acr.id
+  role_definition_name = "AcrPush"
+  principal_id         = azurerm_user_assigned_identity.gha_app.principal_id
+}
+
+resource "azurerm_role_assignment" "app_aks_user" {
+  scope                = module.aks.id
+  role_definition_name = "Azure Kubernetes Service Cluster User Role"
+  principal_id         = azurerm_user_assigned_identity.gha_app.principal_id
+}
+
+resource "azurerm_role_assignment" "app_aks_writer" {
+  scope                = module.aks.id
+  role_definition_name = "Azure Kubernetes Service RBAC Writer"
+  principal_id         = azurerm_user_assigned_identity.gha_app.principal_id
+}
