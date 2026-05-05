@@ -52,11 +52,11 @@ flowchart TD
 Ejecuta el script para crear RG/Storage/Container de tfstate y federation credentials:
 
 ```powershell
-./scripts/bootstrap.ps1 \
-  -SubscriptionId "<subscription-id>" \
-  -TenantId "<tenant-id>" \
-  -ServicePrincipalAppId "<app-id>" \
-  -GitHubOrg "<org>" \
+./scripts/bootstrap.ps1 `
+  -SubscriptionId "<subscription-id>" `
+  -TenantId "<tenant-id>" `
+  -ServicePrincipalAppId "<app-id>" `
+  -GitHubOrg "<org>" `
   -GitHubRepo "<repo>"
 ```
 
@@ -97,3 +97,26 @@ Prueba en seco:
 - Arquitectura: `docs/architecture.md`
 - Bitacora Copilot: `docs/copilot-log.md`
 - Reporte de cumplimiento: `docs/compliance-report.md`
+- Prerrequisitos y alcance de bootstrap: `docs/prerequisites-bootstrap-scope.md`
+- Trazabilidad de cambios: `docs/changes-2026-05-05.md`
+
+## Cleanup (control de costos)
+
+Para destruir toda la infraestructura administrada por Terraform:
+
+```powershell
+./scripts/cleanup.ps1 `
+  -SubscriptionId "<subscription-id>" `
+  -TenantId "<tenant-id>"
+```
+
+Para ademas eliminar backend de estado remoto (Storage + RG tfstate):
+
+```powershell
+./scripts/cleanup.ps1 `
+  -SubscriptionId "<subscription-id>" `
+  -TenantId "<tenant-id>" `
+  -DeleteTfState
+```
+
+Nota: Ejecuta `bootstrap.ps1` y `cleanup.ps1` desde la raiz del repositorio para evitar errores de rutas relativas.

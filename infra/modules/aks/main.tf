@@ -21,6 +21,12 @@ resource "azurerm_kubernetes_cluster" "this" {
     vnet_subnet_id       = var.subnet_id
     orchestrator_version = null
     max_pods             = 30
+
+    upgrade_settings {
+      max_surge                     = "10%"
+      drain_timeout_in_minutes      = 0
+      node_soak_duration_in_minutes = 0
+    }
   }
 
   network_profile {
@@ -52,6 +58,12 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
   vnet_subnet_id        = var.subnet_id
   max_pods              = 30
   tags                  = var.tags
+
+  upgrade_settings {
+    max_surge                     = "10%"
+    drain_timeout_in_minutes      = 0
+    node_soak_duration_in_minutes = 0
+  }
 }
 
 resource "azurerm_role_assignment" "kubelet_acrpull" {

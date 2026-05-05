@@ -42,30 +42,27 @@ resource "azurerm_user_assigned_identity" "gha_app" {
 }
 
 resource "azurerm_federated_identity_credential" "infra_pr" {
-  name                = "fic-${local.base_name}-infra-pr"
-  resource_group_name = azurerm_resource_group.platform.name
-  parent_id           = azurerm_user_assigned_identity.gha_infra.id
-  audience            = ["api://AzureADTokenExchange"]
-  issuer              = "https://token.actions.githubusercontent.com"
-  subject             = "repo:${var.github_org}/${var.github_repo}:pull_request"
+  name                      = "fic-${local.base_name}-infra-pr"
+  user_assigned_identity_id = azurerm_user_assigned_identity.gha_infra.id
+  audience                  = ["api://AzureADTokenExchange"]
+  issuer                    = "https://token.actions.githubusercontent.com"
+  subject                   = "repo:${var.github_org}/${var.github_repo}:pull_request"
 }
 
 resource "azurerm_federated_identity_credential" "infra_main" {
-  name                = "fic-${local.base_name}-infra-main"
-  resource_group_name = azurerm_resource_group.platform.name
-  parent_id           = azurerm_user_assigned_identity.gha_infra.id
-  audience            = ["api://AzureADTokenExchange"]
-  issuer              = "https://token.actions.githubusercontent.com"
-  subject             = "repo:${var.github_org}/${var.github_repo}:ref:refs/heads/${var.github_default_branch}"
+  name                      = "fic-${local.base_name}-infra-main"
+  user_assigned_identity_id = azurerm_user_assigned_identity.gha_infra.id
+  audience                  = ["api://AzureADTokenExchange"]
+  issuer                    = "https://token.actions.githubusercontent.com"
+  subject                   = "repo:${var.github_org}/${var.github_repo}:ref:refs/heads/${var.github_default_branch}"
 }
 
 resource "azurerm_federated_identity_credential" "app_main" {
-  name                = "fic-${local.base_name}-app-main"
-  resource_group_name = azurerm_resource_group.platform.name
-  parent_id           = azurerm_user_assigned_identity.gha_app.id
-  audience            = ["api://AzureADTokenExchange"]
-  issuer              = "https://token.actions.githubusercontent.com"
-  subject             = "repo:${var.github_org}/${var.github_repo}:ref:refs/heads/${var.github_default_branch}"
+  name                      = "fic-${local.base_name}-app-main"
+  user_assigned_identity_id = azurerm_user_assigned_identity.gha_app.id
+  audience                  = ["api://AzureADTokenExchange"]
+  issuer                    = "https://token.actions.githubusercontent.com"
+  subject                   = "repo:${var.github_org}/${var.github_repo}:ref:refs/heads/${var.github_default_branch}"
 }
 
 module "network" {
