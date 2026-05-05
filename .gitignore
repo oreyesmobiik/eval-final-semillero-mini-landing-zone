@@ -4,4 +4,4 @@
 *.tfplan
 *.auto.tfvars
 crash.log
-backend.hcl
+infra/backend.hcl
