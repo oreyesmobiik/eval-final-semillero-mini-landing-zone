@@ -92,6 +92,43 @@ function Ensure-FederatedCredential {
   }
 }
 
+function Ensure-RoleAssignment {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$AssigneeObjectId,
+    [Parameter(Mandatory = $true)]
+    [string]$Role,
+    [Parameter(Mandatory = $true)]
+    [string]$Scope
+  )
+
+  $assignmentExists = Invoke-AzCli -Arguments @(
+    "role", "assignment", "list",
+    "--assignee-object-id", $AssigneeObjectId,
+    "--role", $Role,
+    "--scope", $Scope,
+    "--query", "length(@)",
+    "-o", "tsv"
+  ) -AllowFailure
+
+  if ($assignmentExists -and [int]$assignmentExists -gt 0) {
+    Write-Host "Role assignment '$Role' ya existe en scope '$Scope'. Omitiendo."
+    return
+  }
+
+  if ($PSCmdlet.ShouldProcess($Scope, "Assign role '$Role' to object '$AssigneeObjectId'")) {
+    Invoke-AzCli -Arguments @(
+      "role", "assignment", "create",
+      "--assignee-object-id", $AssigneeObjectId,
+      "--assignee-principal-type", "ServicePrincipal",
+      "--role", $Role,
+      "--scope", $Scope,
+      "--output", "none"
+    ) | Out-Null
+    Write-Host "Role assignment '$Role' creado en scope '$Scope'."
+  }
+}
+
 try {
   if (-not $TfStateStorageAccountName) {
     $hash = ($SubscriptionId -replace "-", "").Substring(0, [Math]::Min(8, ($SubscriptionId -replace "-", "").Length))
@@ -188,6 +225,28 @@ try {
 
   Ensure-FederatedCredential -AppId $ServicePrincipalAppId -Name "gh-main" -Subject "repo:$GitHubOrg/$GitHubRepo:ref:refs/heads/$GitHubBranch"
   Ensure-FederatedCredential -AppId $ServicePrincipalAppId -Name "gh-pr" -Subject "repo:$GitHubOrg/$GitHubRepo:pull_request"
+
+  Write-Step "Ensuring minimum RBAC for Terraform state"
+  $storageAccountId = Invoke-AzCli -Arguments @(
+    "storage", "account", "show",
+    "--name", $TfStateStorageAccountName,
+    "--resource-group", $TfStateResourceGroup,
+    "--query", "id",
+    "-o", "tsv"
+  )
+
+  $servicePrincipalObjectId = Invoke-AzCli -Arguments @(
+    "ad", "sp", "show",
+    "--id", $ServicePrincipalAppId,
+    "--query", "id",
+    "-o", "tsv"
+  ) -AllowFailure
+
+  if (-not $servicePrincipalObjectId) {
+    throw "No se encontro un Service Principal para el AppId '$ServicePrincipalAppId'."
+  }
+
+  Ensure-RoleAssignment -AssigneeObjectId $servicePrincipalObjectId -Role "Storage Blob Data Contributor" -Scope $storageAccountId
 
   Write-Step "Generating backend file for Terraform"
   $backendContent = @"

@@ -69,3 +69,35 @@ resource "azurerm_monitor_metric_alert" "aks_node_cpu_high" {
     }
   }
 }
+
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "app_http_errors" {
+  name                = "sq-${var.aks_name}-app-http-errors"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  scopes              = [azurerm_log_analytics_workspace.this.id]
+  description         = "Alert when app logs show repeated HTTP 404/500 responses"
+  severity            = 2
+  enabled             = true
+  evaluation_frequency = "PT5M"
+  window_duration      = "PT15M"
+  tags                 = var.tags
+
+  criteria {
+    query                   = local.app_http_error_kql
+    time_aggregation_method = "Count"
+    operator                = "GreaterThan"
+    threshold               = var.app_http_error_threshold
+
+    failing_periods {
+      number_of_evaluation_periods = 1
+      minimum_failing_periods_to_trigger_alert = 1
+    }
+  }
+
+  dynamic "action" {
+    for_each = var.alert_email_receiver == null ? [] : [1]
+    content {
+      action_groups = [azurerm_monitor_action_group.ops[0].id]
+    }
+  }
+}

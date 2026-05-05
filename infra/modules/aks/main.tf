@@ -36,7 +36,22 @@ resource "azurerm_kubernetes_cluster" "this" {
     azure_rbac_enabled = true
   }
 
+  key_vault_secrets_provider {
+    secret_rotation_enabled = true
+  }
+
   tags = var.tags
+}
+
+resource "azurerm_kubernetes_cluster_node_pool" "user" {
+  name                  = var.user_node_pool_name
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
+  vm_size               = var.user_node_pool_vm_size
+  node_count            = var.user_node_pool_node_count
+  mode                  = "User"
+  vnet_subnet_id        = var.subnet_id
+  max_pods              = 30
+  tags                  = var.tags
 }
 
 resource "azurerm_role_assignment" "kubelet_acrpull" {

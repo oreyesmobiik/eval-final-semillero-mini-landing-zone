@@ -1,11 +1,11 @@
-name: infra-cd
+name: terraform-apply
 
 on:
   push:
     branches: ["main"]
     paths:
       - "infra/**"
-      - ".github/workflows/infra-cd.yml"
+      - ".github/workflows/terraform-apply.yml"
   workflow_dispatch:
 
 permissions:

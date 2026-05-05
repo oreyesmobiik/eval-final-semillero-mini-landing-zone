@@ -1,11 +1,11 @@
-name: app-cd
+name: app-build-deploy
 
 on:
   push:
     branches: ["main"]
     paths:
       - "app/**"
-      - ".github/workflows/app-cd.yml"
+      - ".github/workflows/app-build-deploy.yml"
   workflow_dispatch:
 
 permissions:
@@ -54,6 +54,8 @@ jobs:
       - name: Deploy app manifests
         run: |
           kubectl apply -f app/k8s/namespace.yaml
+          kubectl apply -f app/k8s/serviceaccount.yaml
+          sed "s|KEYVAULT_NAME_PLACEHOLDER|${{ vars.KEY_VAULT_NAME }}|g; s|TENANT_ID_PLACEHOLDER|${{ vars.AZURE_TENANT_ID }}|g" app/k8s/secretproviderclass.yaml | kubectl apply -f -
           sed "s|IMAGE_PLACEHOLDER|${IMAGE}|g" app/k8s/deployment.yaml | kubectl apply -f -
           kubectl apply -f app/k8s/service.yaml
           kubectl rollout status deployment/miniapp -n miniapp --timeout=180s

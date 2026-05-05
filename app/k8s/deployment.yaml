@@ -13,16 +13,26 @@ spec:
       labels:
         app: miniapp
     spec:
+      serviceAccountName: miniapp-sa
       automountServiceAccountToken: false
       volumes:
         - name: tmp
           emptyDir: {}
+        - name: kv-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: miniapp-kv-secrets
       containers:
         - name: miniapp
           image: IMAGE_PLACEHOLDER
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
+          env:
+            - name: SECRET_FILE_PATH
+              value: /mnt/secrets-store/miniapp-config
           resources:
             requests:
               cpu: "100m"
@@ -38,3 +48,6 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            - name: kv-secrets
+              mountPath: /mnt/secrets-store
+              readOnly: true

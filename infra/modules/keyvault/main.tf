@@ -11,6 +11,19 @@ resource "azurerm_key_vault" "this" {
   tags                          = var.tags
 }
 
+resource "random_password" "miniapp_config" {
+  length  = 20
+  special = true
+}
+
+resource "azurerm_key_vault_secret" "miniapp_config" {
+  name         = "miniapp-config"
+  value        = random_password.miniapp_config.result
+  key_vault_id = azurerm_key_vault.this.id
+  content_type = "text/plain"
+  tags         = var.tags
+}
+
 resource "azurerm_private_endpoint" "this" {
   name                = "pe-${var.name}"
   location            = var.location

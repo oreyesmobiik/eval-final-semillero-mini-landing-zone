@@ -18,6 +18,16 @@ output "aks_name" {
   description = "AKS cluster name"
 }
 
+output "key_vault_name" {
+  value       = module.keyvault.name
+  description = "Key Vault name"
+}
+
+output "miniapp_secret_name" {
+  value       = module.keyvault.miniapp_secret_name
+  description = "Secret name consumed by miniapp through CSI"
+}
+
 output "infra_client_id" {
   value       = azurerm_user_assigned_identity.gha_infra.client_id
   description = "Client ID for infra GitHub Actions identity"

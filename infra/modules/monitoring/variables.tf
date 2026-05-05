@@ -22,6 +22,11 @@ variable "app_namespace" {
   type = string
 }
 
+variable "app_http_error_threshold" {
+  type    = number
+  default = 5
+}
+
 variable "alert_email_receiver" {
   type     = string
   default  = null

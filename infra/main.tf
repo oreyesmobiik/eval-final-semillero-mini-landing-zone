@@ -167,3 +167,9 @@ resource "azurerm_role_assignment" "app_aks_writer" {
   role_definition_name = "Azure Kubernetes Service RBAC Writer"
   principal_id         = azurerm_user_assigned_identity.gha_app.principal_id
 }
+
+resource "azurerm_role_assignment" "aks_kubelet_keyvault_secrets_user" {
+  scope                = module.keyvault.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = module.aks.kubelet_object_id
+}
