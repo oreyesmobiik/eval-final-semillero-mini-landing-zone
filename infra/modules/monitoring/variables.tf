@@ -14,6 +14,18 @@ variable "aks_name" {
   type = string
 }
 
+variable "keyvault_id" {
+  type = string
+}
+
+variable "aks_nsg_id" {
+  type = string
+}
+
+variable "private_endpoint_nsg_id" {
+  type = string
+}
+
 variable "cpu_threshold_percent" {
   type = number
 }

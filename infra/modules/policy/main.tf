@@ -64,6 +64,35 @@ resource "azurerm_policy_definition" "deny_public_access_for_core_services" {
   })
 }
 
+resource "azurerm_policy_definition" "deny_public_access_storage" {
+  name         = "deny-public-access-storage-mini-lz"
+  policy_type  = "Custom"
+  mode         = "All"
+  display_name = "Deny public network access on Storage Accounts"
+
+  metadata = jsonencode({
+    category = "Security"
+  })
+
+  policy_rule = jsonencode({
+    if = {
+      allOf = [
+        {
+          field  = "type"
+          equals = "Microsoft.Storage/storageAccounts"
+        },
+        {
+          field  = "Microsoft.Storage/storageAccounts/publicNetworkAccess"
+          equals = "Enabled"
+        }
+      ]
+    }
+    then = {
+      effect = "deny"
+    }
+  })
+}
+
 resource "azurerm_resource_group_policy_assignment" "deny_public_ip" {
   name                 = "asg-deny-public-ip"
   resource_group_id    = var.scope_resource_group_id
@@ -76,6 +105,14 @@ resource "azurerm_resource_group_policy_assignment" "deny_public_access_core" {
   name                 = "asg-deny-public-access-core"
   resource_group_id    = var.scope_resource_group_id
   policy_definition_id = azurerm_policy_definition.deny_public_access_for_core_services.id
+  location             = var.location
+  enforce              = true
+}
+
+resource "azurerm_resource_group_policy_assignment" "deny_public_access_storage" {
+  name                 = "asg-deny-public-access-storage"
+  resource_group_id    = var.scope_resource_group_id
+  policy_definition_id = azurerm_policy_definition.deny_public_access_storage.id
   location             = var.location
   enforce              = true
 }

@@ -31,6 +31,48 @@ resource "azurerm_monitor_diagnostic_setting" "aks" {
   }
 }
 
+resource "azurerm_monitor_diagnostic_setting" "keyvault" {
+  name                       = "diag-kv"
+  target_resource_id         = var.keyvault_id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.this.id
+
+  enabled_log {
+    category_group = "allLogs"
+  }
+
+  enabled_metric {
+    category = "AllMetrics"
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "aks_nsg" {
+  name                       = "diag-aks-nsg"
+  target_resource_id         = var.aks_nsg_id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.this.id
+
+  enabled_log {
+    category = "NetworkSecurityGroupEvent"
+  }
+
+  enabled_log {
+    category = "NetworkSecurityGroupRuleCounter"
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "private_endpoint_nsg" {
+  name                       = "diag-pe-nsg"
+  target_resource_id         = var.private_endpoint_nsg_id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.this.id
+
+  enabled_log {
+    category = "NetworkSecurityGroupEvent"
+  }
+
+  enabled_log {
+    category = "NetworkSecurityGroupRuleCounter"
+  }
+}
+
 resource "azurerm_monitor_action_group" "ops" {
   count               = var.alert_email_receiver == null ? 0 : 1
   name                = "ag-${var.aks_name}-ops"

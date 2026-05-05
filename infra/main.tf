@@ -135,6 +135,9 @@ module "monitoring" {
   location              = var.location
   aks_id                = module.aks.id
   aks_name              = module.aks.name
+  keyvault_id           = module.keyvault.id
+  aks_nsg_id            = module.network.aks_nsg_id
+  private_endpoint_nsg_id = module.network.private_endpoint_nsg_id
   app_namespace         = var.app_namespace
   cpu_threshold_percent = var.aks_node_cpu_alert_threshold
   alert_email_receiver  = var.monitor_alert_email_receiver

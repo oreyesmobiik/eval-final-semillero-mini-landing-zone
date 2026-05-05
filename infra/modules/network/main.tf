@@ -36,6 +36,18 @@ resource "azurerm_subnet" "aks" {
   address_prefixes     = [var.spoke_aks_subnet_cidr]
 }
 
+resource "azurerm_network_security_group" "aks" {
+  name                = "nsg-${azurerm_virtual_network.spoke.name}-aks"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  tags                = var.tags
+}
+
+resource "azurerm_subnet_network_security_group_association" "aks" {
+  subnet_id                 = azurerm_subnet.aks.id
+  network_security_group_id = azurerm_network_security_group.aks.id
+}
+
 resource "azurerm_subnet" "private_endpoints" {
   name                 = "snet-private-endpoints"
   resource_group_name  = var.resource_group_name
@@ -43,6 +55,18 @@ resource "azurerm_subnet" "private_endpoints" {
   address_prefixes     = [var.spoke_private_endpoint_subnet_cidr]
 
   private_endpoint_network_policies = "Disabled"
+}
+
+resource "azurerm_network_security_group" "private_endpoints" {
+  name                = "nsg-${azurerm_virtual_network.spoke.name}-pe"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  tags                = var.tags
+}
+
+resource "azurerm_subnet_network_security_group_association" "private_endpoints" {
+  subnet_id                 = azurerm_subnet.private_endpoints.id
+  network_security_group_id = azurerm_network_security_group.private_endpoints.id
 }
 
 resource "azurerm_virtual_network_peering" "hub_to_spoke" {

@@ -21,3 +21,11 @@ output "hub_vnet_id" {
 output "spoke_vnet_id" {
   value = azurerm_virtual_network.spoke.id
 }
+
+output "aks_nsg_id" {
+  value = azurerm_network_security_group.aks.id
+}
+
+output "private_endpoint_nsg_id" {
+  value = azurerm_network_security_group.private_endpoints.id
+}

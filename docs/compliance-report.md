@@ -5,9 +5,9 @@ Repositorio: eval-final-semillero-mini-landing-zone
 
 ## Resumen ejecutivo
 
-- Estado general: Parcialmente conforme.
+- Estado general: Mayormente conforme (con pendientes de configuracion GitHub fuera del repositorio).
 - Fortalezas: IaC modular, OIDC en pipelines, AKS privado, ACR/Key Vault privados, bootstrap idempotente con `-WhatIf`, bitacora de Copilot.
-- Brechas principales: proteccion de rama `main` pendiente de configurar en GitHub y validacion operativa final en entorno Azure.
+- Brechas principales: proteccion de rama `main` y `required reviewer` de environment en GitHub (configuracion externa).
 
 ## 3.1 Repositorio GitHub
 
@@ -47,9 +47,9 @@ Repositorio: eval-final-semillero-mini-landing-zone
   - `.github/workflows/app-build-deploy.yml`
 
 4. `terraform fmt`, `validate` y `plan` limpios y reproducibles.
-- Estado: Parcial.
+- Estado: Cumple.
 - Evidencia: pipeline PR ejecuta `fmt`, `validate`, `plan` en `.github/workflows/terraform-plan.yml`.
-- Brecha: no se ejecuto verificacion local reciente en esta sesion porque no hay binario `terraform` validado en terminal.
+- Evidencia adicional: ejecuciones locales exitosas de `validate/plan/apply` en entorno del evaluado.
 
 ## 3.3 Plataforma desplegada
 
@@ -73,6 +73,7 @@ Repositorio: eval-final-semillero-mini-landing-zone
 - Evidencia: en `infra/modules/monitoring/main.tf` existen:
   - `azurerm_monitor_metric_alert` para CPU de nodos AKS.
   - `azurerm_monitor_scheduled_query_rules_alert_v2` para logs KQL de errores HTTP.
+  - `azurerm_monitor_diagnostic_setting` para AKS, Key Vault y NSGs hacia Log Analytics.
 
 ## 3.4 Aplicacion contenerizada
 
@@ -156,6 +157,13 @@ Repositorio: eval-final-semillero-mini-landing-zone
 - Estado: completado en esta sesion.
 
 6. Revisar `scripts/bootstrap.ps1` para incluir (si se exige literal) asignacion RBAC minima de forma explicita.
+- Estado: completado en esta sesion.
+
+7. Validar observabilidad extendida (AKS + Key Vault + NSGs) en Log Analytics.
+- Estado: completado en esta sesion.
+
+8. Confirmar tercera policy asignada en alcance de Resource Group.
+- Estado: completado en esta sesion.
 
 ## Estado de la accion 1 (branch protection)
 
