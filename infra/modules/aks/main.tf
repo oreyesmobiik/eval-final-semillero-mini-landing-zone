@@ -16,8 +16,8 @@ resource "azurerm_kubernetes_cluster" "this" {
 
   default_node_pool {
     name                 = "system"
-    vm_size              = "Standard_D4s_v5"
-    node_count           = 2
+    vm_size              = "Standard_D2s_v3"
+    node_count           = 1
     vnet_subnet_id       = var.subnet_id
     orchestrator_version = null
     max_pods             = 30
@@ -26,7 +26,7 @@ resource "azurerm_kubernetes_cluster" "this" {
   network_profile {
     network_plugin      = "azure"
     network_plugin_mode = "overlay"
-    network_policy      = "cilium"
+    network_policy      = "azure"
     load_balancer_sku   = "standard"
     outbound_type       = "loadBalancer"
   }

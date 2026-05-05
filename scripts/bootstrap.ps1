@@ -24,6 +24,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$Script:AzCliPython = "C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\python.exe"
+
 function Write-Step {
   param([string]$Message)
   Write-Host "`n==> $Message" -ForegroundColor Cyan
@@ -36,7 +38,12 @@ function Invoke-AzCli {
     [switch]$AllowFailure
   )
 
-  $output = & az @Arguments --only-show-errors 2>&1
+  if (Test-Path $Script:AzCliPython) {
+    $output = & $Script:AzCliPython -IBm azure.cli @Arguments --only-show-errors 2>&1
+  }
+  else {
+    $output = & az @Arguments --only-show-errors 2>&1
+  }
   if (-not $AllowFailure -and $LASTEXITCODE -ne 0) {
     throw "Azure CLI command failed: az $($Arguments -join ' ')`n$output"
   }
@@ -163,15 +170,14 @@ try {
   }
 
   Write-Step "Ensuring storage account for Terraform state"
-  $saExists = Invoke-AzCli -Arguments @(
-    "storage", "account", "show",
-    "--name", $TfStateStorageAccountName,
+  $saCount = Invoke-AzCli -Arguments @(
+    "storage", "account", "list",
     "--resource-group", $TfStateResourceGroup,
-    "--query", "name",
+    "--query", "length([?name=='$TfStateStorageAccountName'])",
     "-o", "tsv"
-  ) -AllowFailure
+  )
 
-  if ($saExists) {
+  if ([int]$saCount -gt 0) {
     Write-Host "Storage Account '$TfStateStorageAccountName' ya existe. Omitiendo."
   }
   elseif ($PSCmdlet.ShouldProcess($TfStateStorageAccountName, "Create storage account")) {

@@ -1,0 +1,17 @@
+prefix                             = "contoso"
+location                           = "eastus2"
+environment                        = "dev"
+owner                              = "platform-team"
+github_org                         = "eval-final-semillero-mini-landing-zone"
+github_repo                        = "eval-final-semillero-mini-landing-zone"
+github_default_branch              = "master"
+hub_vnet_cidr                      = "10.50.0.0/16"
+spoke_vnet_cidr                    = "10.51.0.0/16"
+hub_gateway_subnet_cidr            = "10.50.0.0/27"
+enable_bastion_subnet              = false
+hub_bastion_subnet_cidr            = "10.50.0.32/27"
+spoke_aks_subnet_cidr              = "10.51.1.0/24"
+spoke_private_endpoint_subnet_cidr = "10.51.2.0/24"
+aks_node_cpu_alert_threshold       = 80
+app_namespace                      = "miniapp"
+monitor_alert_email_receiver       = null

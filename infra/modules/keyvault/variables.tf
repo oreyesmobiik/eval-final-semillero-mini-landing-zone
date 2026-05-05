@@ -25,3 +25,8 @@ variable "private_dns_zone_id" {
 variable "tags" {
   type = map(string)
 }
+
+variable "create_bootstrap_secret" {
+  type    = bool
+  default = false
+}

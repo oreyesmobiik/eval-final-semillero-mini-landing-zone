@@ -12,13 +12,15 @@ resource "azurerm_key_vault" "this" {
 }
 
 resource "random_password" "miniapp_config" {
+  count   = var.create_bootstrap_secret ? 1 : 0
   length  = 20
   special = true
 }
 
 resource "azurerm_key_vault_secret" "miniapp_config" {
+  count        = var.create_bootstrap_secret ? 1 : 0
   name         = "miniapp-config"
-  value        = random_password.miniapp_config.result
+  value        = random_password.miniapp_config[0].result
   key_vault_id = azurerm_key_vault.this.id
   content_type = "text/plain"
   tags         = var.tags

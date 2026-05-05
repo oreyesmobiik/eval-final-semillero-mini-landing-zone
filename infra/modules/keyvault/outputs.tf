@@ -7,5 +7,5 @@ output "name" {
 }
 
 output "miniapp_secret_name" {
-  value = azurerm_key_vault_secret.miniapp_config.name
+  value = var.create_bootstrap_secret ? azurerm_key_vault_secret.miniapp_config[0].name : "miniapp-config"
 }

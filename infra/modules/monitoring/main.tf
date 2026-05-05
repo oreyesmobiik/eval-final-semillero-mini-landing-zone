@@ -1,9 +1,9 @@
 locals {
   app_http_error_kql = <<-KQL
 ContainerLogV2
-| where KubernetesNamespace == "${var.app_namespace}"
-| where LogMessage has " 404 " or LogMessage has " 500 " or LogMessage matches regex @"\\b(404|500)\\b"
-| project TimeGenerated, KubernetesNamespace, KubernetesPodName, ContainerName, LogMessage
+| extend msg = tostring(column_ifexists("LogMessage", column_ifexists("LogEntry", "")))
+| where msg has "404" or msg has "500"
+| project TimeGenerated, msg
 | order by TimeGenerated desc
 KQL
 }
@@ -71,13 +71,13 @@ resource "azurerm_monitor_metric_alert" "aks_node_cpu_high" {
 }
 
 resource "azurerm_monitor_scheduled_query_rules_alert_v2" "app_http_errors" {
-  name                = "sq-${var.aks_name}-app-http-errors"
-  resource_group_name = var.resource_group_name
-  location            = var.location
-  scopes              = [azurerm_log_analytics_workspace.this.id]
-  description         = "Alert when app logs show repeated HTTP 404/500 responses"
-  severity            = 2
-  enabled             = true
+  name                 = "sq-${var.aks_name}-app-http-errors"
+  resource_group_name  = var.resource_group_name
+  location             = var.location
+  scopes               = [azurerm_log_analytics_workspace.this.id]
+  description          = "Alert when app logs show repeated HTTP 404/500 responses"
+  severity             = 2
+  enabled              = true
   evaluation_frequency = "PT5M"
   window_duration      = "PT15M"
   tags                 = var.tags
@@ -89,7 +89,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "app_http_errors" {
     threshold               = var.app_http_error_threshold
 
     failing_periods {
-      number_of_evaluation_periods = 1
+      number_of_evaluation_periods             = 1
       minimum_failing_periods_to_trigger_alert = 1
     }
   }
