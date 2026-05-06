@@ -38,6 +38,13 @@ El script `scripts/bootstrap.ps1` crea o asegura:
 - Archivo backend para Terraform:
   - `infra/backend.hcl`
 
+Opcional (si se usa `-EnsureOperatorPermissions`):
+
+- Asigna permisos al operador para cubrir precondiciones de entrega:
+  - `Contributor` en la suscripcion.
+  - `Storage Blob Data Contributor` sobre la Storage Account de tfstate.
+  - Owner del App Registration (`ServicePrincipalAppId`) para administrar Federated Credentials.
+
 ## 3. Que NO crea bootstrap (y debe existir antes)
 
 - El App Registration base (`ServicePrincipalAppId`) y su Service Principal.
@@ -67,6 +74,31 @@ El script `scripts/bootstrap.ps1` crea o asegura:
   -ServicePrincipalAppId "<app-id>" `
   -GitHubOrg "<github-org>" `
   -GitHubRepo "<github-repo>"
+```
+
+Si tambien quieres que bootstrap asegure permisos del operador:
+
+```powershell
+./scripts/bootstrap.ps1 `
+  -SubscriptionId "<subscription-id>" `
+  -TenantId "<tenant-id>" `
+  -ServicePrincipalAppId "<app-id>" `
+  -GitHubOrg "<github-org>" `
+  -GitHubRepo "<github-repo>" `
+  -EnsureOperatorPermissions
+```
+
+Si no puede resolver automaticamente el objectId del operador, usar:
+
+```powershell
+./scripts/bootstrap.ps1 `
+  -SubscriptionId "<subscription-id>" `
+  -TenantId "<tenant-id>" `
+  -ServicePrincipalAppId "<app-id>" `
+  -GitHubOrg "<github-org>" `
+  -GitHubRepo "<github-repo>" `
+  -EnsureOperatorPermissions `
+  -OperatorObjectId "<aad-object-id>"
 ```
 
 2. Inicializar y desplegar Terraform:

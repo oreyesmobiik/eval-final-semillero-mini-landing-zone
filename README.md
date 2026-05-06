@@ -60,6 +60,18 @@ Ejecuta el script para crear RG/Storage/Container de tfstate y federation creden
   -GitHubRepo "<repo>"
 ```
 
+Si deseas que bootstrap tambien asegure permisos del operador requeridos por la entrega:
+
+```powershell
+./scripts/bootstrap.ps1 `
+  -SubscriptionId "<subscription-id>" `
+  -TenantId "<tenant-id>" `
+  -ServicePrincipalAppId "<app-id>" `
+  -GitHubOrg "<org>" `
+  -GitHubRepo "<repo>" `
+  -EnsureOperatorPermissions
+```
+
 Prueba en seco:
 
 ```powershell

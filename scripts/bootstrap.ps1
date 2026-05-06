@@ -19,7 +19,9 @@ param(
   [string]$Location = "eastus2",
   [string]$TfStateResourceGroup = "rg-tfstate-mini-lz",
   [string]$TfStateStorageAccountName,
-  [string]$TfStateContainer = "tfstate"
+  [string]$TfStateContainer = "tfstate",
+  [string]$OperatorObjectId,
+  [switch]$EnsureOperatorPermissions
 )
 
 $ErrorActionPreference = "Stop"
@@ -133,6 +135,36 @@ function Ensure-RoleAssignment {
       "--output", "none"
     ) | Out-Null
     Write-Host "Role assignment '$Role' creado en scope '$Scope'."
+  }
+}
+
+function Ensure-AppOwner {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$AppId,
+    [Parameter(Mandatory = $true)]
+    [string]$OwnerObjectId
+  )
+
+  $ownerCount = Invoke-AzCli -Arguments @(
+    "ad", "app", "owner", "list",
+    "--id", $AppId,
+    "--query", "length([?id=='$OwnerObjectId'])",
+    "-o", "tsv"
+  ) -AllowFailure
+
+  if ($ownerCount -and [int]$ownerCount -gt 0) {
+    Write-Host "El operador '$OwnerObjectId' ya es owner del App Registration '$AppId'. Omitiendo."
+    return
+  }
+
+  if ($PSCmdlet.ShouldProcess("App Registration $AppId", "Add owner $OwnerObjectId")) {
+    Invoke-AzCli -Arguments @(
+      "ad", "app", "owner", "add",
+      "--id", $AppId,
+      "--owner-object-id", $OwnerObjectId
+    ) | Out-Null
+    Write-Host "Owner '$OwnerObjectId' agregado al App Registration '$AppId'."
   }
 }
 
@@ -253,6 +285,26 @@ try {
   }
 
   Ensure-RoleAssignment -AssigneeObjectId $servicePrincipalObjectId -Role "Storage Blob Data Contributor" -Scope $storageAccountId
+
+  if ($EnsureOperatorPermissions) {
+    Write-Step "Ensuring operator permissions"
+
+    if (-not $OperatorObjectId) {
+      $OperatorObjectId = Invoke-AzCli -Arguments @(
+        "ad", "signed-in-user", "show",
+        "--query", "id",
+        "-o", "tsv"
+      ) -AllowFailure
+    }
+
+    if (-not $OperatorObjectId) {
+      throw "No se pudo resolver OperatorObjectId automaticamente. Pasa -OperatorObjectId <objectId> para asignar permisos del operador."
+    }
+
+    Ensure-RoleAssignment -AssigneeObjectId $OperatorObjectId -Role "Contributor" -Scope "/subscriptions/$SubscriptionId"
+    Ensure-RoleAssignment -AssigneeObjectId $OperatorObjectId -Role "Storage Blob Data Contributor" -Scope $storageAccountId
+    Ensure-AppOwner -AppId $ServicePrincipalAppId -OwnerObjectId $OperatorObjectId
+  }
 
   Write-Step "Generating backend file for Terraform"
   $backendContent = @"
