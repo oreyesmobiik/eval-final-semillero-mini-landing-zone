@@ -2,7 +2,7 @@ name: terraform-apply
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "master"]
     paths:
       - "infra/**"
       - ".github/workflows/terraform-apply.yml"

@@ -93,9 +93,9 @@ Repositorio: eval-final-semillero-mini-landing-zone
 - Estado: Cumple.
 - Evidencia: `.github/workflows/terraform-plan.yml`.
 
-2. `terraform-apply.yml` en merge a main, con environment prod y required reviewer.
+2. `terraform-apply.yml` en push a rama principal, con environment prod y required reviewer.
 - Estado: Parcial.
-- Evidencia: existe `.github/workflows/terraform-apply.yml` con trigger en `main` y `environment: production`.
+- Evidencia: existe `.github/workflows/terraform-apply.yml` con trigger en rama principal (`main`/`master`) y `environment: production`.
 - Brecha: required reviewer depende de configuracion del Environment en GitHub (fuera del codigo).
 
 3. `app-build-deploy.yml` para build, push y deploy.

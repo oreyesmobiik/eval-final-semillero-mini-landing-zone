@@ -108,7 +108,9 @@ function Ensure-RoleAssignment {
     [Parameter(Mandatory = $true)]
     [string]$Role,
     [Parameter(Mandatory = $true)]
-    [string]$Scope
+    [string]$Scope,
+    [ValidateSet("User", "Group", "ServicePrincipal")]
+    [string]$AssigneePrincipalType
   )
 
   $assignmentExists = Invoke-AzCli -Arguments @(
@@ -126,14 +128,19 @@ function Ensure-RoleAssignment {
   }
 
   if ($PSCmdlet.ShouldProcess($Scope, "Assign role '$Role' to object '$AssigneeObjectId'")) {
-    Invoke-AzCli -Arguments @(
+    $createArguments = @(
       "role", "assignment", "create",
       "--assignee-object-id", $AssigneeObjectId,
-      "--assignee-principal-type", "ServicePrincipal",
       "--role", $Role,
       "--scope", $Scope,
       "--output", "none"
-    ) | Out-Null
+    )
+
+    if ($AssigneePrincipalType) {
+      $createArguments += @("--assignee-principal-type", $AssigneePrincipalType)
+    }
+
+    Invoke-AzCli -Arguments $createArguments | Out-Null
     Write-Host "Role assignment '$Role' creado en scope '$Scope'."
   }
 }
@@ -284,10 +291,11 @@ try {
     throw "No se encontro un Service Principal para el AppId '$ServicePrincipalAppId'."
   }
 
-  Ensure-RoleAssignment -AssigneeObjectId $servicePrincipalObjectId -Role "Storage Blob Data Contributor" -Scope $storageAccountId
+  Ensure-RoleAssignment -AssigneeObjectId $servicePrincipalObjectId -Role "Storage Blob Data Contributor" -Scope $storageAccountId -AssigneePrincipalType "ServicePrincipal"
 
   if ($EnsureOperatorPermissions) {
     Write-Step "Ensuring operator permissions"
+    $operatorPrincipalType = $null
 
     if (-not $OperatorObjectId) {
       $OperatorObjectId = Invoke-AzCli -Arguments @(
@@ -295,14 +303,18 @@ try {
         "--query", "id",
         "-o", "tsv"
       ) -AllowFailure
+
+      if ($OperatorObjectId) {
+        $operatorPrincipalType = "User"
+      }
     }
 
     if (-not $OperatorObjectId) {
       throw "No se pudo resolver OperatorObjectId automaticamente. Pasa -OperatorObjectId <objectId> para asignar permisos del operador."
     }
 
-    Ensure-RoleAssignment -AssigneeObjectId $OperatorObjectId -Role "Contributor" -Scope "/subscriptions/$SubscriptionId"
-    Ensure-RoleAssignment -AssigneeObjectId $OperatorObjectId -Role "Storage Blob Data Contributor" -Scope $storageAccountId
+    Ensure-RoleAssignment -AssigneeObjectId $OperatorObjectId -Role "Contributor" -Scope "/subscriptions/$SubscriptionId" -AssigneePrincipalType $operatorPrincipalType
+    Ensure-RoleAssignment -AssigneeObjectId $OperatorObjectId -Role "Storage Blob Data Contributor" -Scope $storageAccountId -AssigneePrincipalType $operatorPrincipalType
     Ensure-AppOwner -AppId $ServicePrincipalAppId -OwnerObjectId $OperatorObjectId
   }
 

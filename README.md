@@ -86,14 +86,21 @@ Prueba en seco:
   - `terraform plan`
   - comentario automatico del plan en el PR
 
-- Merge a main Infra: `.github/workflows/terraform-apply.yml`
+- Pull Request Infra (artefacto tfplan): `.github/workflows/infra-ci.yml`
+  - `terraform fmt -check`
+  - `terraform validate`
+  - `terraform plan -out=tfplan`
+  - publica `tfplan` como artifact
+
+- Merge/push a rama principal (`main` o `master`) Infra: `.github/workflows/terraform-apply.yml`
   - `terraform apply` usando OIDC
   - environment `production`
 
-- Merge a main App: `.github/workflows/app-build-deploy.yml`
+- Merge/push a rama principal (`main` o `master`) App: `.github/workflows/app-build-deploy.yml`
   - build y push de imagen en ACR
   - despliegue en AKS por `kubectl apply`
   - aplica `SecretProviderClass` para consumir secretos de Key Vault via CSI
+  - requiere runner `self-hosted`, `linux`, `aks-private`
 
 ## Seguridad implementada
 
@@ -132,3 +139,42 @@ Para ademas eliminar backend de estado remoto (Storage + RG tfstate):
 ```
 
 Nota: Ejecuta `bootstrap.ps1` y `cleanup.ps1` desde la raiz del repositorio para evitar errores de rutas relativas.
+
+## Estado de despliegue (2026-05-05)
+
+Despliegue Terraform validado en suscripcion de laboratorio:
+
+- `Apply complete! Resources: 49 added, 0 changed, 0 destroyed.`
+- `resource_group_name=rg-contoso-dev-3cq7e`
+- `aks_name=aks-contoso-dev-3cq7e`
+- `acr_name=acrcontosodev3cq7e`
+- `key_vault_name=kv-contoso-dev-3cq7e`
+- `infra_client_id=99fc0e4f-879c-4d45-ab9a-f9de059b0831`
+- `app_client_id=aacac888-60f4-4400-931a-d38bd144a244`
+
+## Post-deploy (siguiente paso recomendado)
+
+1. Configura variables en GitHub (Repository/Environment variables):
+  - `AZURE_SUBSCRIPTION_ID=20877408-5d51-43c4-9e28-5b0cb03f03ea`
+  - `AZURE_TENANT_ID=0b7e2c44-0f30-4d74-b898-0727b3f67fd4`
+  - `AZURE_CLIENT_ID_INFRA=99fc0e4f-879c-4d45-ab9a-f9de059b0831`
+  - `AZURE_CLIENT_ID_APP=aacac888-60f4-4400-931a-d38bd144a244`
+  - `ACR_NAME=acrcontosodev3cq7e`
+  - `AKS_RESOURCE_GROUP=rg-contoso-dev-3cq7e`
+  - `AKS_NAME=aks-contoso-dev-3cq7e`
+  - `KEY_VAULT_NAME=kv-contoso-dev-3cq7e`
+  - `TFSTATE_RESOURCE_GROUP=rg-tfstate-mini-lz`
+  - `TFSTATE_STORAGE_ACCOUNT=sttfstate20877408`
+  - `TFSTATE_CONTAINER=tfstate`
+
+2. Ejecuta pipeline de infraestructura (`terraform-plan` o `infra-ci` en PR, o `terraform-apply` en la rama principal).
+
+3. Ejecuta pipeline de aplicacion para build/push a ACR y despliegue en AKS.
+
+4. Verifica estado operativo:
+
+```powershell
+az aks get-credentials --resource-group rg-contoso-dev-3cq7e --name aks-contoso-dev-3cq7e --overwrite-existing
+kubectl get nodes
+kubectl get pods -A
+```
